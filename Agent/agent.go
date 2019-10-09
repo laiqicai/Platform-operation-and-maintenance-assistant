@@ -37,16 +37,16 @@ type UpdateNameServer struct {
 		NameServerIP string
 	}
 }
-type UpdateDns struct { //修改的时候传送过来的值
+type UpdateDns struct { //APIserver传过来的dns修改信息
 	Servers []struct {
 		DomainName string
 		DomainIp   string
 	}
 }
-type NameServerslice struct { //用来传送dns和nameserver的json时用的
+type NameServerslice struct {
 	Servers []NameServer
 }
-type Dnsslice struct { //用来传送dns和nameserver的json时用的
+type Dnsslice struct {
 	Servers []Dns
 }
 
@@ -117,14 +117,14 @@ func nameServer(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("json.Unmarshal is err:", err.Error())
 		}
-		fmt.Println(nameServerTmp.Servers[0].NameServerIP)
+		//fmt.Println(nameServerTmp.Servers[0].NameServerIP)
 		//将解析出的文件信息进行覆盖写入
 		f, err := os.OpenFile("/etc/resolv.conf", os.O_WRONLY|os.O_TRUNC, 0666)
 		if err != nil {
 			fmt.Println("file create failed. err: " + err.Error())
 		} else {
 			_, err = f.Write([]byte("nameserver " + nameServerTmp.Servers[0].NameServerIP + "\r\n"))
-			fmt.Println("write succeed!")
+			//fmt.Println("write succeed!")
 			f.Close()
 		}
 		//按行进行追加写入
@@ -134,7 +134,7 @@ func nameServer(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("file create failed. err: " + err.Error())
 			} else {
 				_, err = f.Write([]byte("nameserver " + nameServerTmp.Servers[i].NameServerIP + "\r\n"))
-				fmt.Println("write succeed!")
+				//fmt.Println("write succeed!")
 
 			}
 		}
@@ -207,7 +207,7 @@ func registerNameServer() {
 		fmt.Println("json err:", err)
 	}
 	body := bytes.NewBuffer([]byte(b))
-	http.Post("http://10.4.141.52:8080/nameserver", "application/json;charset=utf-8", body)
+	http.Post("http://10.10.28.62:8080/nameserver", "application/json;charset=utf-8", body)
 
 }
 
@@ -252,7 +252,7 @@ func registerDns() {
 		fmt.Println("json err:", err)
 	}
 	body := bytes.NewBuffer([]byte(b))
-	http.Post("http://10.4.141.52:8080/dns", "application/json;charset=utf-8", body)
+	http.Post("http://10.10.28.62:8080/dns", "application/json;charset=utf-8", body)
 }
 func sendMemStat() {
 	fmt.Println("afsafaf")
@@ -281,7 +281,7 @@ func sendMemStat() {
 				fmt.Println("json err:", err)
 			}
 			body := bytes.NewBuffer([]byte(b))
-			http.Post("http://10.4.141.52:8080/memstat", "application/json;charset=utf-8", body)
+			http.Post("http://10.10.28.62:8080/memstat", "application/json;charset=utf-8", body)
 			fmt.Println("看看时间", timeUnix)
 		}
 	}

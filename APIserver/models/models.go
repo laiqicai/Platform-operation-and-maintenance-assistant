@@ -26,7 +26,7 @@ type MemStat struct {
 }
 func init() {
 	// set default database
-	orm.RegisterDataBase("default", "mysql", "root:laiqicai@tcp(127.0.0.1:3306)/laiqicai?charset=utf8&loc=Asia%2FShanghai", 30)
+	orm.RegisterDataBase("default", "mysql", "root:laiqicai@tcp(10.4.141.52:3306)/laiqicai?charset=utf8", 30)
 	// register model
 	orm.RegisterModel(new(NameServer),new(Dns),new(MemStat))
 	// create table

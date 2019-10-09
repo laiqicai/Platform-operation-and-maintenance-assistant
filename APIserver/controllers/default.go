@@ -26,7 +26,7 @@ type MemStatController struct {
 	beego.Controller
 }
 
-type UpdateNameServerTmp struct { //解析agent发送的nameserver的json信息
+type UpdateNameServerTmp struct {//解析客户端发送的修改nameserver的json
 	Servers []struct {
 		AgentIP          string
 		BeforeNameServer string
@@ -34,7 +34,7 @@ type UpdateNameServerTmp struct { //解析agent发送的nameserver的json信息
 	}
 }
 
-type UpdateDnsTmp struct { //解析agent发送的nameserver的json信息
+type UpdateDnsTmp struct { //解析客户端发送的修改dns的json
 	Servers []struct {
 		AgentIP         string
 		AfterDomainName string
@@ -91,7 +91,6 @@ type NameServerslice struct {
 }
 
 func (this *NameServerController) Post() { //处理来自agent的nameserver信息，存储到数据库
-
 	var nameServerTmp NameServerTmp
 	data := this.Ctx.Input.RequestBody
 	err := json.Unmarshal(data, &nameServerTmp)
@@ -110,10 +109,6 @@ func (this *NameServerController) Post() { //处理来自agent的nameserver信�
 	}
 }
 func (this *DnsController) Post() { //处理来自agent的dns信息，存储到数据库
-	//data := this.Ctx.Input.RequestBody
-	//var f interface{}
-	//json.Unmarshal(data, &f)
-	//fmt.Println(f)
 	var dnsTmp DnsTmp
 	data := this.Ctx.Input.RequestBody
 	err := json.Unmarshal(data, &dnsTmp)
@@ -139,7 +134,6 @@ func (this *MemStatController) Post() { //处理来自agent的mem信息，存到
 	if err != nil {
 		fmt.Println("json.Unmarshal is err:", err.Error())
 	}
-
 	local, _ := time.LoadLocation("Local")
 	t, _ := time.ParseInLocation("2006-01-02 15:04:05", memTmp.TimeStamp, local)
 	var mem models.MemStat
@@ -159,20 +153,6 @@ func (this *NameServerController) Get() { //客户查询nameserver功能
 		log.Println("Url Param 'key' is missing")
 		return
 	}
-
-	////测试是否能发送数据
-	//data := this.Ctx.Input.RequestBody
-	//var f interface{}
-	//json.Unmarshal(data, &f)
-	//fmt.Println(f)
-
-	//var agentIpTmp AgentIpTmp
-	//data := this.Ctx.Input.RequestBody
-	//err := json.Unmarshal(data, &agentIpTmp)
-	//if err != nil {
-	//	fmt.Println("json.Unmarshal is err:", err.Error())
-	//}
-
 	var s NameServerslice
 	//fmt.Println(len(agentIpTmp.Servers))
 	//var wg sync.WaitGroup
@@ -202,26 +182,11 @@ func (this *NameServerController) Get() { //客户查询nameserver功能
 
 		}
 	}
-
-	//if len(s.Servers) == 0 {
-	//	this.Ctx.ResponseWriter.Write([]byte("查询不到该IP %v"))
-	//}else {
 	mystruct := &s
 	this.Data["json"] = mystruct
 	this.ServeJSON()
-	//}
-	//wg.Wait()
-	//fmt.Println(s)
-
 }
 func (this *DnsController) Get() { //客户查询agent的dns信息
-	//var agentIpTmp AgentIpTmp
-	//data := this.Ctx.Input.RequestBody
-	//err := json.Unmarshal(data, &agentIpTmp)
-	//if err != nil {
-	//	fmt.Println("json.Unmarshal is err:", err.Error())
-	//}
-	//fmt.Println(len(agentIpTmp.Servers))
 	keys, ok := this.Ctx.Request.URL.Query()["agentip"]
 	if !ok || len(keys[0]) < 1 {
 		log.Println("Url Param 'key' is missing")
@@ -246,15 +211,6 @@ func (this *DnsController) Get() { //客户查询agent的dns信息
 
 }
 func (this *MemStatController) Get() { //客户查询agent的内存信息
-	//var querymemTmp QueryMemTmp
-	//data := this.Ctx.Input.RequestBody
-	//err := json.Unmarshal(data, &querymemTmp)
-	//if err != nil {
-	//	fmt.Println("json.Unmarshal is err:", err.Error())
-	//}
-	//AgentIP      string
-	//StartTime    string
-	//EndTime      string
 	agentips, ok := this.Ctx.Request.URL.Query()["agentip"]
 	if !ok || len(agentips[0]) < 1 {
 		log.Println("Url Param 'agentip' is missing")
@@ -271,12 +227,10 @@ func (this *MemStatController) Get() { //客户查询agent的内存信息
 		return
 	}
 	var s Memslice
-	//fmt.Println(len(querymemTmp.Servers))
 	for i := 0; i < len(agentips); i++ {
 		agentIP := agentips[i]
 		startTime := starttimes[i]
 		endTime := endtimes[i]
-		//fmt.Println(endTime)
 		o := orm.NewOrm()
 		var memstat []MemStat
 		_, err := o.Raw("select mem_stat from mem_stat where time_stamp>=? and time_stamp < ? and agent_ip = ? ", startTime, endTime, agentIP).QueryRows(&memstat)
@@ -288,7 +242,6 @@ func (this *MemStatController) Get() { //客户查询agent的内存信息
 			tmp, _ := strconv.Atoi(memstat[i].MemStat)
 			sum = sum + tmp
 		}
-		//fmt.Println(sum)
 		if len(memstat) > 0 {
 			average := sum / len(memstat)
 			s.Servers = append(s.Servers, MemRes{AgentIp: agentIP, MemUtilizationAverage: average})
@@ -307,9 +260,7 @@ func (this *NameServerController) Put() { //APIserver 根据客户端修改信�
 	if err != nil {
 		fmt.Println("json.Unmarshal is err:", err.Error())
 	}
-	fmt.Println(len(updateNameServerTmp.Servers))
-
-	for i := 0; i < len(updateNameServerTmp.Servers); i++ { //可以写成匿名的goroutine的形式
+	for i := 0; i < len(updateNameServerTmp.Servers); i++ {
 		agentIP := updateNameServerTmp.Servers[i].AgentIP
 		beforeNameServer := updateNameServerTmp.Servers[i].BeforeNameServer
 		AfterNameServer := updateNameServerTmp.Servers[i].AfterNameServer
@@ -346,14 +297,11 @@ func (this *NameServerController) Put() { //APIserver 根据客户端修改信�
 }
 func (this *DnsController) Put() { //APIserver根据客户端发送信息修改自身的dns信息，并发送至agent进行修改自身dns信息
 	var updateDnsTmp UpdateDnsTmp
-	//var s Memslice
 	data := this.Ctx.Input.RequestBody
 	err := json.Unmarshal(data, &updateDnsTmp)
 	if err != nil {
 		fmt.Println("json.Unmarshal is err:", err.Error())
 	}
-	//fmt.Println(len(updateDnsTmp.Servers))
-
 	for i := 0; i < len(updateDnsTmp.Servers); i++ {
 		agentIP := updateDnsTmp.Servers[i].AgentIP
 		AfterDomainName := updateDnsTmp.Servers[i].AfterDomainName
